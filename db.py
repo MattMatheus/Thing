@@ -8,86 +8,119 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     with conn:
+        # Capsule table
         conn.execute('''
-            CREATE TABLE IF NOT EXISTS thing_lists (
+            CREATE TABLE IF NOT EXISTS capsules (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL
+                name TEXT NOT NULL,
+                description TEXT,
+                created_at TEXT NOT NULL
+            )
+        ''')
+        # Thread table
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS threads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                capsule_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                tags TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (capsule_id) REFERENCES capsules(id) ON DELETE CASCADE
+            )
+        ''')
+        # Entry table
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                thread_id INTEGER NOT NULL,
+                timestamp TEXT NOT NULL,
+                properties TEXT,
+                FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
             )
         ''')
     conn.close()
 
-def get_table_name(list_name):
-    import re
-    return re.sub(r'\W+', '_', list_name.strip().lower())
+# Capsule CRUD
 
-def create_list_type(list_name, properties):
-    table_name = get_table_name(list_name)
-    type_map = {'string': 'TEXT', 'number': 'REAL', 'boolean': 'INTEGER'}
-    columns = ', '.join([
-        f'"{p[0]}" {type_map.get(p[1], "TEXT")} DEFAULT ' +
-        (repr(p[2]) if p[2] != '' and p[1] != 'boolean' else ('1' if p[2] == 'true' and p[1] == 'boolean' else '0' if p[2] == 'false' and p[1] == 'boolean' else 'NULL'))
-        for p in properties
-    ])
-    create_sql = f'CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY AUTOINCREMENT, {columns})'
+def create_capsule(name, description, created_at):
     conn = get_db_connection()
-    try:
-        conn.execute(create_sql)
-        conn.execute('INSERT INTO thing_lists (name) VALUES (?)', (list_name,))
-        conn.commit()
-    finally:
-        conn.close()
+    cur = conn.execute('INSERT INTO capsules (name, description, created_at) VALUES (?, ?, ?)', (name, description, created_at))
+    conn.commit()
+    capsule_id = cur.lastrowid
+    conn.close()
+    return capsule_id
 
-def get_all_lists(filter_value=None):
+def get_all_capsules():
     conn = get_db_connection()
-    if filter_value:
-        rows = conn.execute('SELECT * FROM thing_lists WHERE name LIKE ?', (f'%{filter_value}%',)).fetchall()
-    else:
-        rows = conn.execute('SELECT * FROM thing_lists').fetchall()
+    rows = conn.execute('SELECT * FROM capsules').fetchall()
     conn.close()
     return rows
 
-def get_list_by_id(list_id):
+def get_capsule_by_id(capsule_id):
     conn = get_db_connection()
-    row = conn.execute('SELECT * FROM thing_lists WHERE id = ?', (list_id,)).fetchone()
+    row = conn.execute('SELECT * FROM capsules WHERE id = ?', (capsule_id,)).fetchone()
     conn.close()
     return row
 
-def delete_list(list_id, list_name):
-    table_name = get_table_name(list_name)
+def delete_capsule(capsule_id):
     conn = get_db_connection()
-    conn.execute('DELETE FROM thing_lists WHERE id = ?', (list_id,))
-    conn.execute(f'DROP TABLE IF EXISTS {table_name}')
+    conn.execute('DELETE FROM capsules WHERE id = ?', (capsule_id,))
     conn.commit()
     conn.close()
 
-def get_list_columns(list_name):
-    table_name = get_table_name(list_name)
-    conn = get_db_connection()
-    columns = [col[1] for col in conn.execute(f'PRAGMA table_info({table_name})').fetchall() if col[1] != 'id']
-    conn.close()
-    return columns
+# Thread CRUD
 
-def get_list_objects(list_name):
-    table_name = get_table_name(list_name)
+def create_thread(capsule_id, name, tags, created_at):
     conn = get_db_connection()
-    objects = conn.execute(f'SELECT * FROM {table_name}').fetchall()
+    cur = conn.execute('INSERT INTO threads (capsule_id, name, tags, created_at) VALUES (?, ?, ?, ?)', (capsule_id, name, tags, created_at))
+    conn.commit()
+    thread_id = cur.lastrowid
     conn.close()
-    return objects
+    return thread_id
 
-def add_object_to_list(list_name, data):
-    table_name = get_table_name(list_name)
-    columns = get_list_columns(list_name)
-    values = [data.get(col, '') for col in columns]
-    placeholders = ','.join(['?'] * len(columns))
+def get_threads_by_capsule(capsule_id):
     conn = get_db_connection()
-    conn.execute(f'INSERT INTO {table_name} ({','.join(columns)}) VALUES ({placeholders})', values)
+    rows = conn.execute('SELECT * FROM threads WHERE capsule_id = ?', (capsule_id,)).fetchall()
+    conn.close()
+    return rows
+
+def get_thread_by_id(thread_id):
+    conn = get_db_connection()
+    row = conn.execute('SELECT * FROM threads WHERE id = ?', (thread_id,)).fetchone()
+    conn.close()
+    return row
+
+def delete_thread(thread_id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM threads WHERE id = ?', (thread_id,))
     conn.commit()
     conn.close()
 
-def delete_object_from_list(list_name, obj_id):
-    table_name = get_table_name(list_name)
+# Entry CRUD
+
+def create_entry(thread_id, timestamp, properties_json):
     conn = get_db_connection()
-    conn.execute(f'DELETE FROM {table_name} WHERE id = ?', (obj_id,))
+    cur = conn.execute('INSERT INTO entries (thread_id, timestamp, properties) VALUES (?, ?, ?)', (thread_id, timestamp, properties_json))
+    conn.commit()
+    entry_id = cur.lastrowid
+    conn.close()
+    return entry_id
+
+def get_entries_by_thread(thread_id):
+    conn = get_db_connection()
+    rows = conn.execute('SELECT * FROM entries WHERE thread_id = ?', (thread_id,)).fetchall()
+    conn.close()
+    return rows
+
+def get_entry_by_id(entry_id):
+    conn = get_db_connection()
+    row = conn.execute('SELECT * FROM entries WHERE id = ?', (entry_id,)).fetchone()
+    conn.close()
+    return row
+
+def delete_entry(entry_id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM entries WHERE id = ?', (entry_id,))
     conn.commit()
     conn.close()
 

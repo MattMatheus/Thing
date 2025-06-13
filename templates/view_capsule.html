@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Capsule</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/dark.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+    <div class="container mt-5 shadow rounded border bg-dark">
+        <h2 class="mb-4">View Capsule</h2>
+        <form method="post" action="" class="mb-4 d-flex gap-2 align-items-center">
+            <button type="submit" name="delete_capsule" value="1" class="btn btn-danger" onclick="return confirm('Delete this capsule and all its threads?')">Delete Capsule</button>
+            <a href="/" class="btn btn-link text-secondary">Back</a>
+        </form>
+        <h4 class="text-light mt-4">Add Thread</h4>
+        <form method="post" action="" class="mb-4 mt-2">
+            <div class="row g-2">
+                <div class="col-md-6 mb-2">
+                    <label for="thread_name" class="form-label text-light">Thread Name</label>
+                    <input type="text" id="thread_name" class="form-control bg-dark text-light border-secondary" name="thread_name" placeholder="Enter thread name" required>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label for="tags" class="form-label text-light">Tags (comma separated)</label>
+                    <input type="text" id="tags" class="form-control bg-dark text-light border-secondary" name="tags" placeholder="tag1, tag2">
+                </div>
+            </div>
+            <button type="submit" name="add_thread" value="1" class="btn btn-primary mt-2">Add Thread</button>
+        </form>
+        <h4 class="mt-4 text-light">Threads</h4>
+        <div class="table-responsive">
+        <table class="table table-dark table-bordered table-hover align-middle">
+            <thead>
+                <tr>
+                    <th class="text-light">Name</th>
+                    <th class="text-light">Tags</th>
+                    <th class="text-light">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for thread in threads %}
+                <tr>
+                    <td><a href="/thread/{{ thread['id'] }}" class="text-light text-decoration-none">{{ thread['name'] }}</a></td>
+                    <td>{{ thread['tags'] }}</td>
+                    <td>
+                        <form method="post" action="" style="display:inline;">
+                            <button type="submit" name="delete_thread" value="{{ thread['id'] }}" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-muted">No threads in this capsule.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</body>
+</html>

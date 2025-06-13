@@ -3,154 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thing - Track Your Lists</title>
+    <title>Recall - Track Your Capsules</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-dark-5@1.1.3/dist/bootstrap-dark.min.css" rel="stylesheet">
     <link href="/static/dark.css" rel="stylesheet">
 </head>
 <body class="bg-dark text-light">
-    <div class="container mt-5">
-        <h1 class="mb-4">Thing: Your Lists</h1>
-        <form class="row g-2 align-items-center mb-4" method="get" action="/">
-            <div class="col-auto">
-                <input type="text" class="form-control form-control-sm" name="filter" placeholder="Filter lists by name" value="{{ filter or '' }}" style="width: 180px;">
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-outline-secondary btn-sm" type="submit">Filter</button>
-            </div>
-            <div class="col-auto ms-auto">
-                <a href="/create-list" class="btn btn-success btn-sm">Create New List Type</a>
-            </div>
-        </form>
-        <ul class="list-group mb-4" id="thing-lists">
-            {% for thing_list in thing_lists %}
-                <li class="list-group-item d-flex justify-content-between align-items-center list-link" data-list-id="{{ thing_list['id'] }}" style="cursor:pointer;">
-                    <span class="fw-bold">{{ thing_list['name'] }}</span>
-                    <span class="badge bg-secondary rounded-pill" id="count-{{ thing_list['id'] }}">...</span>
+    <div class="container mt-5 shadow rounded border bg-dark">
+        <h2 class="mb-4">Your Capsules</h2>
+        <a href="/create-capsule" class="btn btn-primary shadow-sm mb-3">Create New Capsule</a>
+        <ul class="list-group mb-4" id="capsule-lists">
+            {% for capsule in capsules %}
+                <li class="list-group-item d-flex justify-content-between align-items-center list-link bg-dark text-light border-secondary" style="cursor:pointer;">
+                    <a href="/capsule/{{ capsule['id'] }}" class="fw-bold text-light text-decoration-none">{{ capsule['name'] }}</a>
                 </li>
             {% else %}
-                <li class="list-group-item text-muted">No lists found.</li>
+                <li class="list-group-item text-muted bg-dark border-secondary">No capsules found.</li>
             {% endfor %}
         </ul>
-        <div id="list-detail"></div>
     </div>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.list-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const listId = this.getAttribute('data-list-id');
-                loadListDetail(listId);
-                document.getElementById('thing-lists').style.display = 'none';
-            });
-        });
-        // Fetch and display item counts for each list
-        document.querySelectorAll('.list-link').forEach(link => {
-            const listId = link.getAttribute('data-list-id');
-            fetch(`/api/list/${listId}`)
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data && data.objects) {
-                        document.getElementById('count-' + listId).textContent = data.objects.length;
-                    } else {
-                        document.getElementById('count-' + listId).textContent = '0';
-                    }
-                });
-        });
-    });
-    function loadListDetail(listId) {
-        fetch(`/api/list/${listId}`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById('list-detail').innerHTML = `<div class='alert alert-danger'>${data.error}</div>`;
-                    return;
-                }
-                let html = `<div class='card mb-4'><div class='card-body'>`;
-                html += `<div class='d-flex justify-content-between align-items-center mb-3'>`;
-                html += `<div><a href="#" class="btn btn-secondary btn-sm me-2" onclick="returnToHome();">Home</a></div>`;
-                html += `<h4 class='mb-0 flex-grow-1 text-center'>${data.list_name}</h4>`;
-                html += `<button class='btn btn-danger btn-sm' onclick='confirmDeleteList(${data.list_id}, "${data.list_name.replace(/"/g, '&quot;')}")'>Delete List</button>`;
-                html += `</div>`;
-                html += `<form onsubmit='return addObject(event, ${data.list_id}, ${JSON.stringify(data.columns)})' class='mb-3'><div class='row'>`;
-                data.columns.forEach(col => {
-                    html += `<div class='col-md-3 mb-2'><input type='text' class='form-control form-control-sm' name='${col}' placeholder='${col}'></div>`;
-                });
-                html += `</div><button type='submit' class='btn btn-primary btn-sm'>Add</button></form>`;
-                html += `<table class='table table-bordered table-sm'><thead><tr>`;
-                data.columns.forEach(col => html += `<th>${col}</th>`);
-                html += `<th>Actions</th></tr></thead><tbody>`;
-                if (data.objects.length === 0) {
-                    html += `<tr><td colspan='${data.columns.length+1}' class='text-muted'>No objects in this list.</td></tr>`;
-                } else {
-                    data.objects.forEach(obj => {
-                        html += `<tr>`;
-                        data.columns.forEach(col => html += `<td>${obj[col] || ''}</td>`);
-                        html += `<td><button class='btn btn-danger btn-sm' onclick='deleteObject(${data.list_id}, ${obj.id})'>Delete</button></td></tr>`;
-                    });
-                }
-                html += `</tbody></table></div></div>`;
-                document.getElementById('list-detail').innerHTML = html;
-            });
-    }
-    function addObject(e, listId, columns) {
-        e.preventDefault();
-        const form = e.target;
-        const data = {};
-        columns.forEach(col => {
-            data[col] = form[col].value;
-        });
-        fetch(`/api/list/${listId}/add`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        }).then(r => r.json()).then(() => loadListDetail(listId));
-        return false;
-    }
-    function deleteObject(listId, objId) {
-        fetch(`/api/list/${listId}/delete_object`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({id: objId})
-        }).then(r => r.json()).then(() => loadListDetail(listId));
-    }
-    function confirmDeleteList(listId, listName) {
-        const promptHtml = `<div class='alert alert-danger'>
-            <strong>Type the list name to confirm deletion:</strong><br>
-            <input type='text' id='delete-confirm-input' class='form-control form-control-sm my-2' placeholder='${listName}'>
-            <button class='btn btn-danger btn-sm' onclick='doDeleteList(${listId}, "${listName.replace(/"/g, '&quot;')}")'>Confirm Delete</button>
-            <button class='btn btn-secondary btn-sm ms-2' onclick='cancelDeleteList()'>Cancel</button>
-        </div>`;
-        document.getElementById('list-detail').insertAdjacentHTML('afterbegin', promptHtml);
-        document.getElementById('delete-confirm-input').focus();
-    }
-    function doDeleteList(listId, listName) {
-        const input = document.getElementById('delete-confirm-input');
-        if (!input || input.value !== listName) {
-            input.classList.add('is-invalid');
-            input.value = '';
-            input.placeholder = 'Type the list name exactly!';
-            input.focus();
-            return;
-        }
-        fetch(`/api/list/${listId}/delete`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'}
-        }).then(r => r.json()).then(() => {
-            document.getElementById('list-detail').innerHTML = '';
-            document.getElementById('thing-lists').style.display = '';
-            window.location.reload();
-        });
-    }
-    function cancelDeleteList() {
-        // Remove the confirmation prompt
-        const alert = document.querySelector('#list-detail .alert-danger');
-        if (alert) alert.remove();
-    }
-    function returnToHome() {
-        document.getElementById('list-detail').innerHTML = '';
-        document.getElementById('thing-lists').style.display = '';
-    }
-    </script>
 </body>
 </html>
