@@ -61,6 +61,7 @@ def view_thread(thread_id):
         return redirect(url_for('home'))
     capsule_id = thread.get('capsule_id') if isinstance(thread, dict) else getattr(thread, 'capsule_id', None)
     capsule = get_capsule_by_id(capsule_id) if capsule_id else None
+    # Ensure capsule_id is passed as a string to url_for
     if request.method == 'POST':
         if 'add_entry' in request.form:
             properties = request.form.get('properties', '{}')
@@ -70,8 +71,11 @@ def view_thread(thread_id):
             entry_id = request.form.get('delete_entry')
             delete_entry(entry_id)
             flash('Entry deleted.', 'success')
+        elif 'back_to_capsule' in request.form:
+            return redirect(url_for('view_capsule', capsule_id=str(capsule_id)))
     entries = get_entries_by_thread(thread_id)
-    return render_template('view_thread.html', thread=thread, capsule=capsule, entries=entries, app_name='Recall')
+    # Pass capsule_id to the template for correct back link
+    return render_template('view_thread.html', thread=thread, capsule=capsule, capsule_id=capsule_id, entries=entries, app_name='Recall')
 
 # --- API Endpoints ---
 @app.route('/api/capsules', methods=['GET'])
