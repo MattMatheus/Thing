@@ -24,54 +24,54 @@ Infrastructure for the graph database will be handled separately.
 
 ✅ 2️⃣ Graph Database Integration
 
-Task 2.1 — Define Canonical Graph Schema
-	• Nodes: Capsule, Thread, Entry, Tag, Template
-	• Edges: HAS_THREAD, HAS_ENTRY, LINKS_TO, TAGGED_AS, USES_TEMPLATE
+# Task 2.1 — Define Canonical Graph Schema
+- [x] Nodes: Capsule, Thread, Entry, Tag, Template
+- [x] Edges: HAS_THREAD, HAS_ENTRY, LINKS_TO, TAGGED_AS, USES_TEMPLATE
 
-Task 2.2 — Implement Graph DB Client
-	• Add connection config
-	• Implement node and edge creation functions
-	• Replace SQLite queries with graph traversal queries
+# Task 2.2 — Implement Graph DB Client
+- [x] Add connection config
+- [x] Implement node and edge creation functions
+- [x] Replace SQLite queries with graph traversal queries
 
-Task 2.3 — Migration Script
-	• Write a one-time script to transform and import existing SQLite data into the graph DB.
+# Task 2.3 — Migration Script
+- [x] (Skipped; not needed)
 
 ⸻
 
 ✅ 3️⃣ Core CRUD API
 
-Task 3.1 — Capsule & Thread Endpoints
-	•	GET /capsules
-	•	POST /capsules
-	•	GET /capsules/{id}/threads
-	•	POST /capsules/{id}/threads
+# Task 3.1 — Capsule & Thread Endpoints
+- [x] GET /capsules
+- [x] POST /capsules
+- [x] GET /capsules/{id}/threads
+- [x] POST /capsules/{id}/threads
 
-Task 3.2 — Entry Endpoints
-	•	GET /threads/{id}/entries
-	•	POST /threads/{id}/entries
+# Task 3.2 — Entry Endpoints
+- [x] GET /threads/{id}/entries
+- [x] POST /threads/{id}/entries
 
-Task 3.3 — Snapshot Endpoint
-	•	POST /threads/{id}/snapshot
-	•	GET /threads/{id}/snapshot
+# Task 3.3 — Snapshot Endpoint
+- [x] POST /threads/{id}/snapshot
+- [x] GET /threads/{id}/snapshot
 
-Task 3.4 — Add Basic Validation
-	•	Ensure all new objects conform to schema
+# Task 3.4 — Add Basic Validation
+- [x] Ensure all new objects conform to schema (UUID string IDs, Neo4j integration, and Flask routes fixed)
 
 ⸻
 
 ✅ 4️⃣ Tagging System
 
 Task 4.1 — Tag Node & Edge
-	•	Implement Tag node model
-	•	Add TAGGED_AS edge logic
+	• Implement Tag node model
+	• Add TAGGED_AS edge logic
 
 Task 4.2 — Tag CRUD
-	•	POST /tags
-	•	POST /threads/{id}/tags
-	•	GET /threads?tag={tag}
+	• POST /tags
+	• POST /threads/{id}/tags
+	• GET /threads?tag={tag}
 
 Task 4.3 — Tag-Based Query
-	•	Add graph query to filter Threads or Entries by Tags
+	• Add graph query to filter Threads or Entries by Tags
 
 ⸻
 

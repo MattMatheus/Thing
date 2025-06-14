@@ -33,6 +33,10 @@
 - All data is now stored in Neo4j (see .env for connection config).
 - All CRUD and query operations use the Neo4j Python driver.
 - SQLite and related code have been removed.
+- All core CRUD flows (Capsule, Thread, Entry, Snapshot) are now fully functional and integrated with Neo4j.
+- All Flask routes and API endpoints use string (UUID) IDs for graph objects.
+- Template folder is set to `src/frontend/templates` for all UI rendering.
+- Known issues with ID types and retrieval have been resolved.
 
 ## Features
 
@@ -47,7 +51,8 @@
 - `recall.py` — Main Flask app, routes, and logic
 - `db.py` — Database connection and initialization
 - `requirements.txt` — Python dependencies
-- `thing.db` — SQLite database
+- `docs/cypher_schema_examples.cypher` — Example Cypher commands for Neo4j schema setup and manual data manipulation
+- `thing.db` — SQLite database (legacy, not used)
 - `static/dark.css` — Central dark mode CSS
 - `templates/` — Jinja2 HTML templates:
   - `index.html` — Main/landing page
