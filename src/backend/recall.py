@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from db import (
+from .db import (
     init_db, create_capsule, get_all_capsules, get_capsule_by_id, delete_capsule,
     create_thread, get_threads_by_capsule, get_thread_by_id, delete_thread,
     create_entry, get_entries_by_thread, get_entry_by_id, delete_entry
