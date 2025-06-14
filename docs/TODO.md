@@ -8,33 +8,33 @@ Infrastructure for the graph database will be handled separately.
 
 ✅ 1️⃣ Initial Setup & Refactor
 
-Task 1.1 — Refactor Domain Model
-	•	Rename classes & files to: Capsule, Thread, Entry, Snapshot
-	•	Migrate existing SQLite schema to match hierarchy
-	•	Remove old or redundant structures
+# Task 1.1 — Refactor Domain Model
+- [x] Rename classes & files to: Capsule, Thread, Entry, Snapshot
+- [x] Migrate existing SQLite schema to match hierarchy (now graph-based)
+- [x] Remove old or redundant structures
 
-Task 1.2 — Abstract Data Access Layer
-	•	Create an interface or service layer to handle CRUD operations
-	•	Encapsulate storage-specific logic (SQLite → GraphDB switch)
+# Task 1.2 — Abstract Data Access Layer
+- [x] Create an interface or service layer to handle CRUD operations (Neo4j)
+- [x] Encapsulate storage-specific logic (SQLite → GraphDB switch)
 
-Task 1.3 — Unit Tests
-	•	Add tests for new models and CRUD endpoints
+# Task 1.3 — Unit Tests
+- [ ] Add tests for new models and CRUD endpoints
 
 ⸻
 
 ✅ 2️⃣ Graph Database Integration
 
 Task 2.1 — Define Canonical Graph Schema
-	•	Nodes: Capsule, Thread, Entry, Tag, Template
-	•	Edges: HAS_THREAD, HAS_ENTRY, LINKS_TO, TAGGED_AS, USES_TEMPLATE
+	• Nodes: Capsule, Thread, Entry, Tag, Template
+	• Edges: HAS_THREAD, HAS_ENTRY, LINKS_TO, TAGGED_AS, USES_TEMPLATE
 
 Task 2.2 — Implement Graph DB Client
-	•	Add connection config
-	•	Implement node and edge creation functions
-	•	Replace SQLite queries with graph traversal queries
+	• Add connection config
+	• Implement node and edge creation functions
+	• Replace SQLite queries with graph traversal queries
 
 Task 2.3 — Migration Script
-	•	Write a one-time script to transform and import existing SQLite data into the graph DB.
+	• Write a one-time script to transform and import existing SQLite data into the graph DB.
 
 ⸻
 

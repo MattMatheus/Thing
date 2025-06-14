@@ -1,130 +1,137 @@
-import sqlite3
+from neo4j import GraphDatabase
+from dotenv import load_dotenv
 import os
+from datetime import datetime
 
-def get_db_connection():
-    db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'thing.db')
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
+load_dotenv()
 
-def init_db():
-    conn = get_db_connection()
-    with conn:
-        # Capsule table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS capsules (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                description TEXT,
-                created_at TEXT NOT NULL
-            )
-        ''')
-        # Thread table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS threads (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                capsule_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                tags TEXT,
-                created_at TEXT NOT NULL,
-                FOREIGN KEY (capsule_id) REFERENCES capsules(id) ON DELETE CASCADE
-            )
-        ''')
-        # Entry table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS entries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                thread_id INTEGER NOT NULL,
-                timestamp TEXT NOT NULL,
-                properties TEXT,
-                FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
-            )
-        ''')
-    conn.close()
+NEO4J_URI = os.getenv("NEO4J_URI")
+NEO4J_USER = os.getenv("NEO4J_USER")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 
-# Capsule CRUD
+def get_graph_driver():
+    return GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
+# Capsule CRUD (Graph)
 def create_capsule(name, description, created_at):
-    conn = get_db_connection()
-    cur = conn.execute('INSERT INTO capsules (name, description, created_at) VALUES (?, ?, ?)', (name, description, created_at))
-    conn.commit()
-    capsule_id = cur.lastrowid
-    conn.close()
-    return capsule_id
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run(
+                """
+                CREATE (c:Capsule {id: randomUUID(), name: $name, description: $description, created_at: $created_at})
+                RETURN c.id AS id
+                """,
+                name=name, description=description, created_at=created_at.isoformat()
+            )
+            return result.single()["id"]
 
 def get_all_capsules():
-    conn = get_db_connection()
-    rows = conn.execute('SELECT * FROM capsules').fetchall()
-    conn.close()
-    return rows
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run("MATCH (c:Capsule) RETURN c")
+            return [record["c"] for record in result]
 
 def get_capsule_by_id(capsule_id):
-    conn = get_db_connection()
-    row = conn.execute('SELECT * FROM capsules WHERE id = ?', (capsule_id,)).fetchone()
-    conn.close()
-    return row
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run(
+                "MATCH (c:Capsule {id: $id}) RETURN c",
+                id=capsule_id
+            )
+            return result.single()["c"] if result.single() else None
 
 def delete_capsule(capsule_id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM capsules WHERE id = ?', (capsule_id,))
-    conn.commit()
-    conn.close()
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            session.run(
+                "MATCH (c:Capsule {id: $id}) DELETE c",
+                id=capsule_id
+            )
 
 # Thread CRUD
 
 def create_thread(capsule_id, name, tags, created_at):
-    conn = get_db_connection()
-    cur = conn.execute('INSERT INTO threads (capsule_id, name, tags, created_at) VALUES (?, ?, ?, ?)', (capsule_id, name, tags, created_at))
-    conn.commit()
-    thread_id = cur.lastrowid
-    conn.close()
-    return thread_id
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run(
+                """
+                MATCH (c:Capsule {id: $capsule_id})
+                CREATE (t:Thread {id: randomUUID(), name: $name, tags: $tags, created_at: $created_at})
+                MERGE (c)-[:CONTAINS]->(t)
+                RETURN t.id AS id
+                """,
+                capsule_id=capsule_id, name=name, tags=tags, created_at=created_at.isoformat()
+            )
+            return result.single()["id"]
 
 def get_threads_by_capsule(capsule_id):
-    conn = get_db_connection()
-    rows = conn.execute('SELECT * FROM threads WHERE capsule_id = ?', (capsule_id,)).fetchall()
-    conn.close()
-    return rows
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run(
+                "MATCH (c:Capsule {id: $capsule_id})-[:CONTAINS]->(t:Thread) RETURN t",
+                capsule_id=capsule_id
+            )
+            return [record["t"] for record in result]
 
 def get_thread_by_id(thread_id):
-    conn = get_db_connection()
-    row = conn.execute('SELECT * FROM threads WHERE id = ?', (thread_id,)).fetchone()
-    conn.close()
-    return row
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run(
+                "MATCH (t:Thread {id: $id}) RETURN t",
+                id=thread_id
+            )
+            return result.single()["t"] if result.single() else None
 
 def delete_thread(thread_id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM threads WHERE id = ?', (thread_id,))
-    conn.commit()
-    conn.close()
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            session.run(
+                "MATCH (t:Thread {id: $id}) DELETE t",
+                id=thread_id
+            )
 
 # Entry CRUD
 
 def create_entry(thread_id, timestamp, properties_json):
-    conn = get_db_connection()
-    cur = conn.execute('INSERT INTO entries (thread_id, timestamp, properties) VALUES (?, ?, ?)', (thread_id, timestamp, properties_json))
-    conn.commit()
-    entry_id = cur.lastrowid
-    conn.close()
-    return entry_id
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run(
+                """
+                MATCH (t:Thread {id: $thread_id})
+                CREATE (e:Entry {id: randomUUID(), timestamp: $timestamp, properties: $properties_json})
+                MERGE (t)-[:HAS_ENTRY]->(e)
+                RETURN e.id AS id
+                """,
+                thread_id=thread_id, timestamp=timestamp.isoformat(), properties_json=properties_json
+            )
+            return result.single()["id"]
 
 def get_entries_by_thread(thread_id):
-    conn = get_db_connection()
-    rows = conn.execute('SELECT * FROM entries WHERE thread_id = ?', (thread_id,)).fetchall()
-    conn.close()
-    return rows
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run(
+                "MATCH (t:Thread {id: $thread_id})-[:HAS_ENTRY]->(e:Entry) RETURN e",
+                thread_id=thread_id
+            )
+            return [record["e"] for record in result]
 
 def get_entry_by_id(entry_id):
-    conn = get_db_connection()
-    row = conn.execute('SELECT * FROM entries WHERE id = ?', (entry_id,)).fetchone()
-    conn.close()
-    return row
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run(
+                "MATCH (e:Entry {id: $id}) RETURN e",
+                id=entry_id
+            )
+            return result.single()["e"] if result.single() else None
 
 def delete_entry(entry_id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM entries WHERE id = ?', (entry_id,))
-    conn.commit()
-    conn.close()
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            session.run(
+                "MATCH (e:Entry {id: $id}) DELETE e",
+                id=entry_id
+            )
 
 if __name__ == '__main__':
-    init_db()
+    # The database is initialized with the first capsule for testing purposes.
+    create_capsule("Initial Capsule", "This is an initial capsule for testing.", datetime.now())

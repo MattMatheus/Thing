@@ -2,28 +2,37 @@
 
 ## Project Overview
 
-**Recall** is a Flask-based web application for tracking arbitrary capsules of information. Users can create custom capsule types, each with a set of properties (fields) of variable length and type (string, number, boolean). The app uses SQLite for data storage and is styled for dark mode using Bootstrap Dark. The UI is single-page-app-like, with dynamic capsule viewing and management.
+**Recall** is a Flask-based web application for tracking arbitrary capsules of information. Users can create custom capsule types, each with a set of properties (fields) of variable length and type (string, number, boolean). The app uses Neo4j for data storage and is styled for dark mode using Bootstrap Dark. The UI is single-page-app-like, with dynamic capsule viewing and management.
 
-## Data Model
+## Data Model (Graph-Based, Neo4j)
 
-### Capsule Types
-- Each capsule type is defined by the user and stored in the `thing_lists` table.
-- Each capsule type has:
-  - `id` (integer, primary key)
-  - `name` (string, unique)
-- When a new capsule type is created, a new table is created in the database with the sanitized name of the capsule.
-- Each property of a capsule type has:
-  - `name` (string)
-  - `type` (string: 'string', 'number', 'boolean')
-  - `default` (optional, type-dependent)
-- Property types are mapped to SQLite types:
-  - `string` → `TEXT`
-  - `number` → `REAL`
-  - `boolean` → `INTEGER` (0/1)
+### Nodes
+- **Capsule**: Represents a collection of threads.
+- **Thread**: Belongs to a Capsule, contains Entries, can have Tags.
+- **Entry**: Belongs to a Thread, can link to other Entries.
+- **Snapshot**: Captures the state of a Thread at a point in time.
+- **Tag**: Used for categorization and filtering.
+- **Template**: Defines structure metadata for Threads/Entries.
 
-### Capsule Entries
-- Each entry in a capsule type is a row in the corresponding table.
-- Each entry has an `id` (primary key) and columns for each property.
+### Relationships (Edges)
+- `HAS_THREAD`: Capsule → Thread
+- `HAS_ENTRY`: Thread → Entry
+- `LINKS_TO`: Entry → Entry
+- `TAGGED_AS`: Thread/Entry → Tag
+- `USES_TEMPLATE`: Thread → Template
+
+### Example Node Properties
+- Capsule: `id`, `name`, `description`, `created_at`
+- Thread: `id`, `name`, `created_at`, `tags`
+- Entry: `id`, `timestamp`, `properties`
+- Snapshot: `id`, `created_at`, `payload`
+- Tag: `id`, `name`
+- Template: `id`, `name`, `structure`
+
+## Backend Changes
+- All data is now stored in Neo4j (see .env for connection config).
+- All CRUD and query operations use the Neo4j Python driver.
+- SQLite and related code have been removed.
 
 ## Features
 
