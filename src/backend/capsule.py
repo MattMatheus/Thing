@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 import uuid
 
 class Capsule:
@@ -8,4 +8,3 @@ class Capsule:
         self.name = name
         self.description = description
         self.created_at = created_at or datetime.utcnow()
-        self.threads: List['Thread'] = []

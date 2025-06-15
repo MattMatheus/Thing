@@ -11,46 +11,55 @@
     <div class="container mt-5 shadow rounded border bg-dark">
         <h2 class="mb-4">View Capsule</h2>
         <form method="post" action="" class="mb-4 d-flex gap-2 align-items-center">
-            <button type="submit" name="delete_capsule" value="1" class="btn btn-danger" onclick="return confirm('Delete this capsule and all its threads?')">Delete Capsule</button>
+            <button type="submit" name="delete_capsule" value="1" class="btn btn-danger" onclick="return confirm('Delete this capsule and all its entries?')">Delete Capsule</button>
             <a href="/" class="btn btn-link text-secondary">Back</a>
         </form>
-        <h4 class="text-light mt-4">Add Thread</h4>
-        <form method="post" action="" class="mb-4 mt-2">
+        <button class="btn btn-primary mb-3" onclick="document.getElementById('addEntryForm').style.display='block';this.style.display='none'">Add Entry</button>
+        <form method="post" action="" id="addEntryForm" style="display:none;" class="mb-4 mt-2">
+            <h4 class="text-light">Add Entry</h4>
             <div class="row g-2">
-                <div class="col-md-6 mb-2">
-                    <label for="thread_name" class="form-label text-light">Thread Name</label>
-                    <input type="text" id="thread_name" class="form-control bg-dark text-light border-secondary" name="thread_name" placeholder="Enter thread name" required>
+                {% for field in fields %}
+                <div class="col-md-4 mb-2">
+                    <label class="form-label text-light">{{ field.name }} ({{ field.type }})</label>
+                    {% if field.type == 'string' %}
+                        <input type="text" name="{{ field.name }}" class="form-control bg-dark text-light border-secondary" value="{{ field.defaultValue }}">
+                    {% elif field.type == 'int' %}
+                        <input type="number" name="{{ field.name }}" class="form-control bg-dark text-light border-secondary" value="{{ field.defaultValue }}">
+                    {% elif field.type == 'boolean' %}
+                        <input type="checkbox" name="{{ field.name }}" class="form-check-input" {% if field.defaultValue in ['true', 'True', True] %}checked{% endif %}>
+                    {% endif %}
                 </div>
-                <div class="col-md-6 mb-2">
-                    <label for="tags" class="form-label text-light">Tags (comma separated)</label>
-                    <input type="text" id="tags" class="form-control bg-dark text-light border-secondary" name="tags" placeholder="tag1, tag2">
-                </div>
+                {% endfor %}
             </div>
-            <button type="submit" name="add_thread" value="1" class="btn btn-primary mt-2">Add Thread</button>
+            <button type="submit" name="add_entry" value="1" class="btn btn-success mt-2">Create Entry</button>
+            <button type="button" class="btn btn-secondary mt-2" onclick="document.getElementById('addEntryForm').style.display='none';document.querySelector('button.btn.btn-primary.mb-3').style.display='inline-block'">Cancel</button>
         </form>
-        <h4 class="mt-4 text-light">Threads</h4>
+        <h4 class="mt-4 text-light">Entries</h4>
         <div class="table-responsive">
         <table class="table table-dark table-bordered table-hover align-middle">
             <thead>
                 <tr>
-                    <th class="text-light">Name</th>
-                    <th class="text-light">Tags</th>
+                    {% for field in fields %}
+                    <th class="text-light">{{ field.name }}</th>
+                    {% endfor %}
                     <th class="text-light">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for thread in threads %}
+                {% for entry in entries %}
                 <tr>
-                    <td><a href="/thread/{{ thread['id'] }}" class="text-light text-decoration-none">{{ thread['name'] }}</a></td>
-                    <td>{{ thread['tags'] }}</td>
+                    {% for field in fields %}
+                    <td>{{ entry['properties'][field.name] if field.name in entry['properties'] else '' }}</td>
+                    {% endfor %}
                     <td>
                         <form method="post" action="" style="display:inline;">
-                            <button type="submit" name="delete_thread" value="{{ thread['id'] }}" class="btn btn-sm btn-danger">Delete</button>
+                            <input type="hidden" name="delete_entry" value="{{ entry['id'] }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                         </form>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="3" class="text-muted">No threads in this capsule.</td></tr>
+                <tr><td colspan="{{ fields|length + 1 }}" class="text-muted">No entries in this capsule.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

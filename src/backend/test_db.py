@@ -14,27 +14,19 @@ def test_create_and_get_capsule():
     capsules = db.get_all_capsules()
     assert any(c["id"] == capsule_id for c in capsules)
 
-def test_create_and_get_thread():
-    capsule_id = db.create_capsule("Thread Capsule", "desc", datetime.utcnow())
-    thread_id = db.create_thread(capsule_id, "Test Thread", ["tag1"], datetime.utcnow())
-    assert thread_id is not None
-    threads = db.get_threads_by_capsule(capsule_id)
-    assert any(t["id"] == thread_id for t in threads)
-
 def test_create_and_get_entry():
     capsule_id = db.create_capsule("Entry Capsule", "desc", datetime.utcnow())
-    thread_id = db.create_thread(capsule_id, "Entry Thread", [], datetime.utcnow())
-    entry_id = db.create_entry(thread_id, datetime.utcnow(), {"foo": "bar"})
+    entry_id = db.create_entry(capsule_id, datetime.utcnow(), {"foo": "bar"})
     assert entry_id is not None
-    entries = db.get_entries_by_thread(thread_id)
+    entries = db.get_entries_by_capsule(capsule_id)
     assert any(e["id"] == entry_id for e in entries)
 
 def test_create_and_get_snapshot():
     capsule_id = db.create_capsule("Snap Capsule", "desc", datetime.utcnow())
-    thread_id = db.create_thread(capsule_id, "Snap Thread", [], datetime.utcnow())
-    snap_id = db.create_snapshot(thread_id, datetime.utcnow(), {"snap": 1})
+    entry_id = db.create_entry(capsule_id, datetime.utcnow(), {"foo": "bar"})
+    snap_id = db.create_snapshot(entry_id, datetime.utcnow(), {"snap": 1})
     assert snap_id is not None
-    snaps = db.get_snapshots_by_thread(thread_id)
+    snaps = db.get_snapshots_by_entry(entry_id)
     assert any(s["id"] == snap_id for s in snaps)
 
 def test_create_and_get_tag():

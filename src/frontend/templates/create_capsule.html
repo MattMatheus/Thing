@@ -10,18 +10,65 @@
 <body class="bg-dark text-light">
     <div class="container mt-5 shadow rounded border bg-dark">
         <h2 class="mb-4">Create a New Capsule</h2>
-        <form method="post" action="/create-capsule">
+        <form method="post" action="" id="capsuleForm">
             <div class="mb-3">
                 <label for="capsule_name" class="form-label text-light">Capsule Name</label>
-                <input type="text" class="form-control" id="capsule_name" name="capsule_name" required>
+                <input type="text" id="capsule_name" name="capsule_name" class="form-control bg-dark text-light border-secondary" required>
             </div>
             <div class="mb-3">
-                <label for="capsule_description" class="form-label text-light">Description (optional)</label>
-                <input type="text" class="form-control" id="capsule_description" name="capsule_description">
+                <label for="capsule_description" class="form-label text-light">Description</label>
+                <textarea id="capsule_description" name="capsule_description" class="form-control bg-dark text-light border-secondary"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary shadow-sm">Save</button>
-            <a href="/" class="btn btn-link text-secondary">Cancel</a>
+            <h4 class="text-light mt-4">Fields</h4>
+            <div id="fieldsContainer"></div>
+            <button type="button" class="btn btn-secondary mb-3" onclick="addField()">Add Field</button>
+            <input type="hidden" name="fields_json" id="fields_json">
+            <button type="submit" class="btn btn-primary">Create Capsule</button>
         </form>
     </div>
+    <script>
+    let fields = [];
+    function addField(name = '', type = 'string', defaultValue = '') {
+        const idx = fields.length;
+        fields.push({name, type, defaultValue});
+        renderFields();
+    }
+    function deleteField(idx) {
+        fields.splice(idx, 1);
+        renderFields();
+    }
+    function renderFields() {
+        const container = document.getElementById('fieldsContainer');
+        container.innerHTML = '';
+        fields.forEach((field, idx) => {
+            container.innerHTML += `
+            <div class="row g-2 mb-2 align-items-end">
+                <div class="col-md-4">
+                    <input type="text" class="form-control bg-dark text-light border-secondary" placeholder="Field Name" value="${field.name}" onchange="fields[${idx}].name = this.value">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select bg-dark text-light border-secondary" onchange="fields[${idx}].type = this.value">
+                        <option value="string" ${field.type==='string'?'selected':''}>String</option>
+                        <option value="int" ${field.type==='int'?'selected':''}>Integer</option>
+                        <option value="boolean" ${field.type==='boolean'?'selected':''}>Boolean</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control bg-dark text-light border-secondary" placeholder="Default Value" value="${field.defaultValue}" onchange="fields[${idx}].defaultValue = this.value">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger" onclick="deleteField(${idx})">Delete</button>
+                </div>
+            </div>`;
+        });
+        document.getElementById('fields_json').value = JSON.stringify(fields);
+    }
+    document.getElementById('capsuleForm').onsubmit = function() {
+        document.getElementById('fields_json').value = JSON.stringify(fields);
+        return true;
+    };
+    // Add one field by default
+    if (fields.length === 0) addField();
+    </script>
 </body>
 </html>

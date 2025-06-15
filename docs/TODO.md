@@ -61,29 +61,29 @@ Infrastructure for the graph database will be handled separately.
 
 ✅ 4️⃣ Tagging System
 
-Task 4.1 — Tag Node & Edge
-	• Implement Tag node model
-	• Add TAGGED_AS edge logic
+# Task 4.1 — Tag Node & Edge
+- [x] Implement Tag node model
+- [x] Add TAGGED_AS edge logic
 
-Task 4.2 — Tag CRUD
-	• POST /tags
-	• POST /threads/{id}/tags
-	• GET /threads?tag={tag}
+# Task 4.2 — Tag CRUD
+- [x] POST /tags
+- [x] POST /threads/{id}/tags
+- [x] GET /threads?tag={tag}
 
-Task 4.3 — Tag-Based Query
-	• Add graph query to filter Threads or Entries by Tags
+# Task 4.3 — Tag-Based Query
+- [x] Add graph query to filter Threads or Entries by Tags
 
 ⸻
 
 ✅ 5️⃣ Relationships & Linking
 
-Task 5.1 — Links Between Entries
-	•	Add LINKS_TO edge model
-	•	POST /entries/{id}/link with target Entry ID
-	•	GET /entries/{id}/links
+# Task 5.1 — Links Between Entries
+- [x] Add LINKS_TO edge model
+- [x] POST /entries/{id}/link with target Entry ID
+- [x] GET /entries/{id}/links
 
-Task 5.2 — Query Linked Data
-	•	Traverse and fetch linked Entries recursively if needed
+# Task 5.2 — Query Linked Data
+- [ ] Traverse and fetch linked Entries recursively if needed
 
 ⸻
 
