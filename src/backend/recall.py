@@ -6,7 +6,7 @@ from db import (
     link_entry_to_entry, get_linked_entries
 )
 import json
-from datetime import datetime
+from datetime import datetime, UTC
 import os
 
 # Set the template folder to src/frontend/templates (robust, with debug print)
@@ -22,7 +22,7 @@ def create_capsule_route():
         capsule_desc = request.form.get('capsule_description', '')
         fields_json = request.form.get('fields_json', '[]')
         fields = json.loads(fields_json)
-        capsule_id = create_capsule(capsule_name, capsule_desc, datetime.utcnow(), fields)
+        capsule_id = create_capsule(capsule_name, capsule_desc, datetime.now(UTC), fields)
         flash('Capsule created successfully!', 'success')
         return redirect(url_for('home'))
     return render_template('create_capsule.html')
@@ -52,7 +52,7 @@ def view_capsule(capsule_id):
                 elif field['type'] == 'boolean':
                     val = val == 'on' or val == 'true' or val is True
                 entry_data[field['name']] = val
-            create_entry(capsule_id, datetime.utcnow(), json.dumps(entry_data))
+            create_entry(capsule_id, datetime.now(UTC), json.dumps(entry_data))
             flash('Entry added.', 'success')
         elif 'delete_entry' in request.form:
             entry_id = request.form.get('delete_entry')
@@ -112,7 +112,7 @@ def api_add_entry(capsule_id):
     if not capsule:
         return jsonify({'error': 'Capsule not found'}), 404
     properties = request.json.get('properties', '{}')
-    create_entry(capsule_id, datetime.utcnow(), json.dumps(properties))
+    create_entry(capsule_id, datetime.now(UTC), json.dumps(properties))
     return jsonify({'success': True})
 
 @app.route('/api/capsule/<capsule_id>/delete_entry', methods=['POST'])
