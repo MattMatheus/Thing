@@ -83,18 +83,18 @@ Infrastructure for the graph database will be handled separately.
 - [x] GET /entries/{id}/links
 
 # Task 5.2 — Query Linked Data
-- [ ] Traverse and fetch linked Entries recursively if needed
+- [x] Traverse and fetch linked Entries recursively if needed
 
 ⸻
 
 ✅ 6️⃣ Search & Filter
 
 Task 6.1 — Full-Text or Property Search
-	•	Implement text search on Entry properties
-	•	Filter by Tags, date, or custom fields
+	• [x] Implement text search on Entry properties
+	• [x] Filter by Tags, date, or custom fields
 
 Task 6.2 — Combined Search API
-	•	GET /search?tag=X&text=Y&linked_to=Z
+	• [ ] GET /search?tag=X&text=Y&linked_to=Z
 
 ⸻
 
