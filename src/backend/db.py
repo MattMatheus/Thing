@@ -253,6 +253,63 @@ def get_template_for_entry(entry_id):
             record = result.single()
             return record["tpl"] if record else None
 
+def get_linked_entries_recursive(entry_id, max_depth=5, _visited=None):
+    """Recursively fetch all entries linked from the given entry (traverse LINKS_TO). Returns a flat list of unique entries."""
+    if _visited is None:
+        _visited = set()
+    if entry_id in _visited or max_depth <= 0:
+        return []
+    _visited.add(entry_id)
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            # Get directly linked entries
+            result = session.run(
+                """
+                MATCH (e:Entry {id: $entry_id})-[:LINKS_TO]->(linked:Entry)
+                RETURN linked
+                """,
+                entry_id=entry_id
+            )
+            linked_entries = [record["linked"] for record in result]
+            all_entries = []
+            for entry in linked_entries:
+                eid = entry["id"]
+                if eid not in _visited:
+                    all_entries.append(entry)
+                    # Recurse
+                    all_entries.extend(get_linked_entries_recursive(eid, max_depth-1, _visited))
+            return all_entries
+
+def search_entries_by_text(text):
+    """Search entries whose properties JSON contains the given text (case-insensitive substring match)."""
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            # Use CONTAINS for substring search on properties (stored as JSON string)
+            result = session.run(
+                """
+                MATCH (e:Entry)
+                WHERE toLower(e.properties) CONTAINS toLower($text)
+                RETURN e
+                """,
+                text=text
+            )
+            return [record["e"] for record in result]
+
+def filter_entries_by_tag(tag_name):
+    """Return all entries tagged with the given tag name."""
+    with get_graph_driver() as driver:
+        with driver.session() as session:
+            result = session.run(
+                """
+                MATCH (e:Entry)-[:TAGGED_AS]->(tag:Tag {name: $tag_name})
+                RETURN e
+                """,
+                tag_name=tag_name
+            )
+            return [record["e"] for record in result]
+
+# Optionally, add filter by date or custom fields as needed
+
 if __name__ == '__main__':
     # The database is initialized with the first capsule for testing purposes.
     create_capsule("Initial Capsule", "This is an initial capsule for testing.", datetime.now())

@@ -34,6 +34,59 @@
             <button type="submit" name="add_entry" value="1" class="btn btn-success mt-2">Create Entry</button>
             <button type="button" class="btn btn-secondary mt-2" onclick="document.getElementById('addEntryForm').style.display='none';document.querySelector('button.btn.btn-primary.mb-3').style.display='inline-block'">Cancel</button>
         </form>
+
+        <form class="mb-4 d-flex flex-wrap gap-2 align-items-center" id="searchForm" onsubmit="return searchEntries(event)">
+            <input type="text" class="form-control bg-dark text-light border-secondary" id="searchText" placeholder="Search text in entries..." style="max-width:200px;">
+            <input type="text" class="form-control bg-dark text-light border-secondary" id="searchTag" placeholder="Tag filter..." style="max-width:150px;">
+            <button type="submit" class="btn btn-info">Search</button>
+            <button type="button" class="btn btn-secondary" onclick="resetSearch()">Reset</button>
+        </form>
+        <div id="searchResults" class="mb-4"></div>
+        <script>
+        function searchEntries(event) {
+            event.preventDefault();
+            const text = document.getElementById('searchText').value;
+            const tag = document.getElementById('searchTag').value;
+            let url = '/api/entries/search?';
+            if (text) url += 'text=' + encodeURIComponent(text) + '&';
+            if (tag) url += 'tag=' + encodeURIComponent(tag);
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    const results = data.entries || [];
+                    let html = '';
+                    if (results.length === 0) {
+                        html = '<div class="text-muted">No entries found.</div>';
+                    } else {
+                        html = '<table class="table table-dark table-bordered table-hover align-middle"><thead><tr>';
+                        if (results[0].properties) {
+                            for (const k in results[0].properties) {
+                                html += `<th class='text-light'>${k}</th>`;
+                            }
+                        }
+                        html += '<th class="text-light">Actions</th></tr></thead><tbody>';
+                        for (const entry of results) {
+                            html += '<tr>';
+                            if (entry.properties) {
+                                for (const k in entry.properties) {
+                                    html += `<td>${entry.properties[k]}</td>`;
+                                }
+                            }
+                            html += `<td><span class='text-secondary'>ID: ${entry.id}</span></td></tr>`;
+                        }
+                        html += '</tbody></table>';
+                    }
+                    document.getElementById('searchResults').innerHTML = html;
+                });
+            return false;
+        }
+        function resetSearch() {
+            document.getElementById('searchText').value = '';
+            document.getElementById('searchTag').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+        }
+        </script>
+
         <h4 class="mt-4 text-light">Entries</h4>
         <div class="table-responsive">
         <table class="table table-dark table-bordered table-hover align-middle">

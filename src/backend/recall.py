@@ -3,17 +3,20 @@ from db import (
     create_capsule, get_all_capsules, get_capsule_by_id, delete_capsule,
     create_entry, get_entries_by_capsule, get_entry_by_id, delete_entry,
     create_tag, get_tag_by_name,
-    link_entry_to_entry, get_linked_entries
+    link_entry_to_entry, get_linked_entries, get_linked_entries_recursive,
+    search_entries_by_text, filter_entries_by_tag
 )
 import json
 from datetime import datetime, UTC
 import os
+from flasgger import Swagger
 
 # Set the template folder to src/frontend/templates (robust, with debug print)
 TEMPLATE_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '../frontend/templates'))
 print(f"[Recall] Using template folder: {TEMPLATE_DIR}")
 app = Flask(__name__, template_folder=TEMPLATE_DIR)
 app.secret_key = 'recall-secret-key'
+swagger = Swagger(app)
 
 @app.route('/create-capsule', methods=['GET', 'POST'])
 def create_capsule_route():
@@ -84,9 +87,35 @@ def view_capsule(capsule_id):
         parsed_entries.append(entry_dict)
     return render_template('view_capsule.html', capsule=capsule, entries=parsed_entries, fields=fields, app_name='Recall')
 
+@app.route('/apidocs')
+def apidocs_redirect():
+    """Redirect /apidocs to the Flasgger Swagger UI."""
+    return redirect('/apidocs/')
+
 # --- API Endpoints ---
 @app.route('/api/capsules', methods=['GET'])
 def api_get_all_capsules():
+    """
+    Get all capsules
+    ---
+    tags:
+      - Capsules
+    responses:
+      200:
+        description: List of all capsules
+        schema:
+          type: object
+          properties:
+            capsules:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+    """
     capsules = get_all_capsules()
     result = [
         {'id': row['id'], 'name': row['name']} for row in capsules
@@ -145,6 +174,34 @@ def api_link_entry(entry_id):
 def api_get_entry_links(entry_id):
     linked = get_linked_entries(entry_id)
     return jsonify({'linked_entries': [dict(e) for e in linked]})
+
+@app.route('/api/entries/<entry_id>/links_recursive', methods=['GET'])
+def api_get_entry_links_recursive(entry_id):
+    linked = get_linked_entries_recursive(entry_id)
+    # Remove duplicates by id
+    seen = set()
+    unique = []
+    for e in linked:
+        eid = e.get('id')
+        if eid and eid not in seen:
+            seen.add(eid)
+            unique.append(dict(e))
+    return jsonify({'linked_entries_recursive': unique})
+
+@app.route('/api/entries/search', methods=['GET'])
+def api_search_entries():
+    text = request.args.get('text')
+    tag = request.args.get('tag')
+    results = set()
+    if text:
+        for e in search_entries_by_text(text):
+            results.add(e['id'])
+    if tag:
+        for e in filter_entries_by_tag(tag):
+            results.add(e['id'])
+    # Fetch full entry objects for all result IDs
+    entries = [dict(get_entry_by_id(eid)) for eid in results if get_entry_by_id(eid)]
+    return jsonify({'entries': entries})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
